@@ -122,12 +122,12 @@
     function updateKbLine() {
         var a = getAdvisor(state.advisor);
         var ids = (a && a.kbIds) || [];
-        if (!ids.length) { el.kbLine.innerHTML = '当前角色<b>未挂接知识库</b> · 可在设置里编辑'; return; }
+        if (!ids.length) { el.kbLine.innerHTML = '未挂接资料'; return; }
         var names = ids.map(function (id) {
             var k = state.allKbs.filter(function (x) { return x.id === id; })[0];
             return k ? k.title : null;
         }).filter(Boolean);
-        el.kbLine.innerHTML = '当前角色挂接资料：<b>' + names.join('、') + '</b> · 可在设置里编辑';
+        el.kbLine.innerHTML = '挂接资料：<b>' + names.join('、') + '</b>';
     }
 
     /* ===================== 切换角色 ===================== */
