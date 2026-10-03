@@ -19,8 +19,10 @@ RA.KB = (function () {
         return loadManifest().then(function (m) {
             var kb = (m.kbs || []).filter(function (x) { return x.id === id; })[0];
             if (!kb) throw new Error('未找到默认知识库 ' + id);
-            return fetch('./' + kb.file, { cache: 'no-cache' })
-                .then(function (r) { if (!r.ok) throw new Error('文件 ' + r.status); return r.text(); });
+            // 优先用 manifest 里登记的 url（可指向任意公开 GitHub / 可跨域网址），否则用仓库本地文件
+            var src = (kb.url && String(kb.url).trim()) ? kb.url : ('./' + kb.file);
+            return fetch(src, { cache: 'no-cache' })
+                .then(function (r) { if (!r.ok) throw new Error('知识库 ' + r.status); return r.text(); });
         }).then(function (t) { contentCache[id] = t; return t; });
     }
 

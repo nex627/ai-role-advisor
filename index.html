@@ -57,10 +57,6 @@
                         <button class="stop" id="stop" style="display:none;">停止</button>
                         <button class="send" id="send">发送</button>
                     </div>
-                    <div class="composer-foot">
-                        <div>按 <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</div>
-                        <button class="link-btn" id="reset">清空当前对话</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -113,8 +109,11 @@
                         <input id="kb-file" type="file" accept=".md,.txt,.text" hidden>
                     </label>
                 </div>
-                <textarea id="kb-content" rows="5" placeholder="粘贴资料正文，或上传文件…"></textarea>
+                <input id="kb-url" type="url" class="kb-url" placeholder="或粘贴 GitHub / 可跨域网址（如 raw.githubusercontent.com/.../x.md）">
+                <textarea id="kb-content" rows="5" placeholder="粘贴资料正文，或上传文件 / 填网址自动抓取…"></textarea>
                 <button class="primary" id="kb-add">添加资料到本地</button>
+                <div class="kb-msg" id="kb-msg"></div>
+                <p class="kb-note">支持任何可跨域网址（GitHub raw 链接最稳）。若抓取失败，多半是该网址不允许跨域（CORS），改用本地粘贴或上传即可。</p>
             </div>
         </section>
 

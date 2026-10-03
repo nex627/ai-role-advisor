@@ -291,7 +291,7 @@
             role: $('am-role').value.trim(),
             system: $('am-system').value,
             kbIds: kbIds,
-            desc: $('am-role').value.trim(),
+            desc: '',
             hint: '自定义角色 · 直接提问即可',
             samples: [],
             placeholder: '说说你的问题或方案…'
@@ -321,7 +321,7 @@
             var item = document.createElement('div'); item.className = 'item';
             item.innerHTML =
                 '<div class="dot" style="background:#64748b">库</div>' +
-                '<div class="info"><div class="t">' + esc(k.title) + '</div><div class="s">' + (isCustom ? '本地 · 仅你可见' : '默认 · 来自仓库') + '</div></div>' +
+                '<div class="info"><div class="t">' + esc(k.title) + '</div><div class="s">' + (isCustom ? (k.url ? '本地 · 来自网址' : '本地 · 仅你可见') : '默认 · 来自仓库') + '</div></div>' +
                 '<div class="acts">' +
                 (isCustom ? '<button class="mini del">删除</button>' : '<button class="mini default" disabled>默认</button>') +
                 '</div>';
@@ -339,17 +339,38 @@
     }
     function addKB() {
         var title = $('kb-title').value.trim();
-        var content = $('kb-content').value.trim();
         if (!title) { $('kb-title').focus(); return; }
-        if (!content) { $('kb-content').focus(); return; }
-        var rec = { id: 'c_' + Date.now(), title: title, content: content, createdAt: Date.now() };
-        RA.KB.putCustom(rec).then(function () {
-            return RA.KB.listAll();
-        }).then(function (all) {
-            state.allKbs = all;
-            $('kb-title').value = ''; $('kb-content').value = '';
-            renderKBList(); updateKbLine(); renderAdvisorList();
-        });
+        var url = $('kb-url').value.trim();
+        var content = $('kb-content').value.trim();
+        var btn = $('kb-add');
+        function setMsg(msg, ok) { var n = $('kb-msg'); n.textContent = msg || ''; n.className = 'kb-msg ' + (ok ? 'ok' : 'err'); }
+        function store(text, srcUrl) {
+            if (!text) { $('kb-content').focus(); return; }
+            var rec = { id: 'c_' + Date.now(), title: title, content: text, url: srcUrl || '', createdAt: Date.now() };
+            RA.KB.putCustom(rec).then(function () {
+                return RA.KB.listAll();
+            }).then(function (all) {
+                state.allKbs = all;
+                $('kb-title').value = ''; $('kb-url').value = ''; $('kb-content').value = '';
+                setMsg('已保存到本机浏览器', true);
+                renderKBList(); updateKbLine(); renderAdvisorList();
+            });
+        }
+        // 填了网址且正文为空 → 先抓取再存（仍只存浏览器）
+        if (url && !content) {
+            btn.disabled = true; setMsg('正在从网址抓取…');
+            fetch(url, { mode: 'cors' }).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            }).then(function (t) {
+                $('kb-content').value = t; btn.disabled = false; store(t.trim(), url);
+            }).catch(function (e) {
+                btn.disabled = false;
+                setMsg('抓取失败：' + (e && e.message ? e.message : e) + '（多半是该网址不允许跨域，可改为本地粘贴）', false);
+            });
+            return;
+        }
+        store(content);
     }
 
     /* ===================== 初始化 ===================== */
@@ -358,7 +379,7 @@
     function init() {
         el = {
             msgs: $('msgs'), input: $('input'), send: $('send'), stop: $('stop'),
-            reset: $('reset'), tabs: $('tabs'), drawer: $('drawer'), overlay: $('overlay'),
+            tabs: $('tabs'), drawer: $('drawer'), overlay: $('overlay'),
             kbLine: $('kbLine'), keyBadge: $('keyBadge')
         };
         state.settings = RA.Config.getSettings();
@@ -381,16 +402,9 @@
 
         // 事件
         el.input.addEventListener('input', autoGrow);
-        el.input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(el.input.value); } });
+        el.input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(el.input.value); } });
         el.send.addEventListener('click', function () { send(el.input.value); });
         el.stop.addEventListener('click', function () { var c = state.ctrl[state.advisor]; if (c) c.abort(); });
-        el.reset.addEventListener('click', function () {
-            var tid = state.advisor;
-            if (state.running[tid]) return;
-            if (!(state.threads[tid] || []).length) return;
-            if (!window.confirm('清空与「' + (getAdvisor(tid) ? getAdvisor(tid).name : '当前角色') + '」的全部对话？')) return;
-            state.threads[tid] = []; render(); updateControls(); save();
-        });
 
         el.msgs.addEventListener('click', function (e) {
             var node = e.target;
