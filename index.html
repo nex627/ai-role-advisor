@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色顾问 · 可自托管的 AI 对话工作台</title>
+    <meta name="description" content="一个纯静态、可部署到 GitHub Pages 的 AI 角色对话工作台。密钥与自定义内容只存在你本地浏览器，仓库只放默认知识库与提示词。">
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+
+<div class="app">
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-inner">
+                <div class="logo">
+                    <div class="logo-icon">⚡</div>
+                    <div class="logo-text">角色顾问<div class="sub">自托管 · 密钥在本地</div></div>
+                </div>
+                <span class="key-badge" id="keyBadge" title="尚未配置 API 密钥">未配置密钥</span>
+                <button class="gear" id="openSettings" aria-label="设置">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 标题区 -->
+    <div class="intro">
+        <div class="container">
+            <h1>角色<span class="gradient-text">顾问</span></h1>
+            <p class="lead">纯静态、可自托管的 AI 对话工作台。自己配知识库和角色提示词，密钥只存在你本地浏览器。</p>
+            <div class="notice">
+                <b>隐私</b>· 你的 API 密钥、自定义角色与知识库只保存在<strong>本机浏览器</strong>，不会上传到任何服务器，也不在仓库里
+            </div>
+            <div class="kb-line" id="kbLine"></div>
+        </div>
+    </div>
+
+    <!-- 顾问切换 -->
+    <div class="tabs">
+        <div class="container">
+            <div class="tabs-inner" id="tabs"></div>
+        </div>
+    </div>
+
+    <!-- 对话区 -->
+    <div class="container" style="flex:1; min-height:0; display:flex; width:100%;">
+        <div class="chat">
+            <div class="msgs" id="msgs"></div>
+            <div class="composer">
+                <div class="composer-inner">
+                    <div class="box">
+                        <textarea id="input" rows="1" placeholder="说说你的问题或方案…"></textarea>
+                        <button class="stop" id="stop" style="display:none;">停止</button>
+                        <button class="send" id="send">发送</button>
+                    </div>
+                    <div class="composer-foot">
+                        <div>按 <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</div>
+                        <button class="link-btn" id="reset">清空当前对话</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 设置抽屉 -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+        <h2>设置</h2>
+        <button class="drawer-close" id="closeSettings" aria-label="关闭">×</button>
+    </div>
+    <div class="drawer-body">
+
+        <section class="panel">
+            <h3>① API 配置<span class="tag">只存本地</span></h3>
+            <p class="panel-note">模型接口必须允许浏览器跨域（CORS）。DeepSeek / OpenAI / Moonshot 等均支持。密钥仅用于你本机发起的请求。</p>
+            <label class="fld">接口地址（Base URL）
+                <input id="set-baseURL" type="text" placeholder="https://api.deepseek.com/v1">
+            </label>
+            <label class="fld">API 密钥
+                <input id="set-apiKey" type="password" placeholder="sk-..." autocomplete="off">
+            </label>
+            <label class="fld">模型名称
+                <input id="set-model" type="text" placeholder="deepseek-chat">
+            </label>
+            <label class="fld">温度 <span id="tempVal" class="muted">0.7</span>
+                <input id="set-temperature" type="range" min="0" max="1.5" step="0.1" value="0.7">
+            </label>
+            <button class="primary" id="set-save">保存配置</button>
+            <div class="save-msg" id="set-msg"></div>
+        </section>
+
+        <section class="panel">
+            <h3>② 角色管理</h3>
+            <p class="panel-note">默认角色来自仓库 <code>presets/advisors.json</code>；下面可新增 / 编辑 / 删除你自己的角色（存本地）。</p>
+            <div id="advisor-list" class="list"></div>
+            <button class="ghost" id="add-advisor">+ 新增角色</button>
+        </section>
+
+        <section class="panel">
+            <h3>③ 知识库管理</h3>
+            <p class="panel-note">默认知识库是仓库里的 <code>.md</code> 文件（可 fork 后增改）；下方可添加你自己的资料（存本地，不上传）。</p>
+            <div id="kb-list" class="list"></div>
+            <div class="kb-add">
+                <div class="kb-add-row">
+                    <input id="kb-title" type="text" placeholder="资料名称，如「我的产品手册」">
+                    <label class="file-btn">上传 .md/.txt
+                        <input id="kb-file" type="file" accept=".md,.txt,.text" hidden>
+                    </label>
+                </div>
+                <textarea id="kb-content" rows="5" placeholder="粘贴资料正文，或上传文件…"></textarea>
+                <button class="primary" id="kb-add">添加资料到本地</button>
+            </div>
+        </section>
+
+    </div>
+</aside>
+
+<!-- 角色编辑弹层 -->
+<div class="modal" id="advisorModal" aria-hidden="true">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3 id="am-title">编辑角色</h3>
+            <button class="drawer-close" id="am-close" aria-label="关闭">×</button>
+        </div>
+        <div class="modal-body">
+            <label class="fld">角色名称
+                <input id="am-name" type="text" placeholder="如：宪章顾问">
+            </label>
+            <div class="am-row">
+                <label class="fld">头像字
+                    <input id="am-avatar" type="text" maxlength="1" placeholder="法">
+                </label>
+                <label class="fld">主题色
+                    <input id="am-color" type="color" value="#7c3aed">
+                </label>
+            </div>
+            <label class="fld">一句话定位（副标题）
+                <input id="am-role" type="text" placeholder="如：对抗顾问">
+            </label>
+            <label class="fld">系统提示词（决定它怎么想）
+                <textarea id="am-system" rows="7" placeholder="你是一位…"></textarea>
+            </label>
+            <label class="fld">挂接知识库（可多选）
+                <div id="am-kbs" class="chk-group"></div>
+            </label>
+            <div class="modal-foot">
+                <button class="danger" id="am-delete" style="display:none;">删除</button>
+                <span class="spacer"></span>
+                <button class="ghost" id="am-cancel">取消</button>
+                <button class="primary" id="am-save">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./assets/js/config.js"></script>
+<script src="./assets/js/llm.js"></script>
+<script src="./assets/js/kb.js"></script>
+<script src="./assets/js/app.js"></script>
+</body>
+</html>

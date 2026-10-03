@@ -1,0 +1,7 @@
+{
+  "kbs": [
+    { "id": "huawei-basic-law", "title": "华为基本法（精要）", "file": "kb/huawei-basic-law.md" },
+    { "id": "blue-army", "title": "蓝军对抗方法论", "file": "kb/blue-army.md" },
+    { "id": "role-prompt-guide", "title": "角色提示词编写指南", "file": "kb/role-prompt-guide.md" }
+  ]
+}
