@@ -13,6 +13,7 @@
         running: {},
         ctrl: {}
     };
+    var pendingAdvisor = null; // 引导页里选中的起始角色
 
     var el = {};
     var STORE_KEY = RA.Config.KEYS.threads;
@@ -215,7 +216,11 @@
 
     /* ===================== 设置抽屉 ===================== */
     function openSettings() { el.drawer.classList.add('show'); el.overlay.classList.add('show'); el.drawer.setAttribute('aria-hidden', 'false'); fillSettings(); }
-    function closeSettings() { el.drawer.classList.remove('show'); el.overlay.classList.remove('show'); el.drawer.setAttribute('aria-hidden', 'true'); }
+    function closeSettings() {
+        el.drawer.classList.remove('show'); el.overlay.classList.remove('show'); el.drawer.setAttribute('aria-hidden', 'true');
+        // 关闭设置后：已配密钥则保持引导页隐藏；未配则回到引导页
+        if (state.settings && state.settings.apiKey) hideWelcome(); else showWelcome();
+    }
 
     function fillSettings() {
         $('set-baseURL').value = state.settings.baseURL || '';
@@ -402,6 +407,7 @@
             if (!getAdvisor(state.advisor) && state.advisors.length) state.advisor = state.advisors[0].id;
             updateKeyBadge(); updateTabs(); render(); updateControls(); autoGrow();
             renderAdvisorList(); renderKBList(); updateKbLine();
+            setupWelcome();
         }).catch(function (e) {
             el.msgs.innerHTML = '<div class="empty"><h3>加载失败</h3><div class="hint">无法读取预设文件。若你是用 file:// 直接打开本页，请改用本地服务器（见 README）：<br>在此目录运行 <code>python -m http.server 8000</code>，再访问 <code>http://localhost:8000</code></div></div>';
         });
@@ -446,6 +452,63 @@
             reader.onload = function () { $('kb-content').value = reader.result; if (!$('kb-title').value.trim()) $('kb-title').value = f.name.replace(/\.[^.]+$/, ''); };
             reader.readAsText(f);
         });
+
+        // 引导页
+        $('w-save').addEventListener('click', saveWelcomeKey);
+        $('w-kb').addEventListener('click', function () { hideWelcome(); openSettings(); setTimeout(function () { var p = $('panel-kb'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); });
+        $('w-enter').addEventListener('click', enterWorkbench);
+    }
+
+    /* ===================== 引导页 ===================== */
+    function setupWelcome() {
+        // 已配置密钥的直接进工作台，不弹引导；否则默认先落引导页
+        if (state.settings && state.settings.apiKey) { hideWelcome(); return; }
+        pendingAdvisor = state.advisor;
+        // 预填已有设置
+        $('w-baseURL').value = state.settings ? (state.settings.baseURL || '') : '';
+        $('w-apiKey').value = state.settings ? (state.settings.apiKey || '') : '';
+        $('w-model').value = state.settings ? (state.settings.model || '') : '';
+        renderWelcomeRoles();
+        showWelcome();
+    }
+    function renderWelcomeRoles() {
+        var box = $('welcome-roles'); box.innerHTML = '';
+        state.advisors.forEach(function (a) {
+            var b = document.createElement('button');
+            b.className = 'welcome-role' + (a.id === pendingAdvisor ? ' active' : '');
+            b.innerHTML = '<span class="dot" style="background:' + (a.color || '#8b5cf6') + '">' + esc(a.avatar || '问') + '</span>' + esc(a.name);
+            b.addEventListener('click', function () {
+                pendingAdvisor = a.id;
+                Array.prototype.forEach.call(box.children, function (c) { c.classList.remove('active'); });
+                b.classList.add('active');
+            });
+            box.appendChild(b);
+        });
+    }
+    function showWelcome() { $('welcome').setAttribute('aria-hidden', 'false'); }
+    function hideWelcome() { $('welcome').setAttribute('aria-hidden', 'true'); }
+    function saveWelcomeKey() {
+        var base = $('w-baseURL').value.trim();
+        var key = $('w-apiKey').value.trim();
+        var model = $('w-model').value.trim();
+        var n = $('w-msg');
+        if (!key) { n.textContent = '请填写 API 密钥（必填）'; n.className = 'welcome-msg err'; $('w-apiKey').focus(); return; }
+        state.settings.baseURL = base;
+        state.settings.apiKey = key;
+        state.settings.model = model;
+        if (RA.Config.saveSettings(state.settings)) {
+            updateKeyBadge();
+            n.textContent = '已保存，可以进入工作台了'; n.className = 'welcome-msg ok';
+            var tag = $('wstep-key-tag'); tag.textContent = '已完成'; tag.className = 'wstep-tag done';
+            var note = $('w-enter-note'); note.textContent = '密钥已就绪，点击进入即可开始对话。';
+        } else {
+            n.textContent = '保存失败：浏览器存储不可用'; n.className = 'welcome-msg err';
+        }
+    }
+    function enterWorkbench() {
+        hideWelcome();
+        if (pendingAdvisor && getAdvisor(pendingAdvisor)) switchTo(pendingAdvisor);
+        else { state.advisor = state.advisors[0].id; updateTabs(); render(); updateControls(); updateKbLine(); }
     }
 
     function updateKeyBadge() {

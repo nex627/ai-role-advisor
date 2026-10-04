@@ -55,6 +55,45 @@
     </div>
 </div>
 
+<!-- 引导页（首次 / 未配置密钥时显示） -->
+<div class="welcome" id="welcome" aria-hidden="true">
+    <div class="welcome-card">
+        <h1 class="welcome-title">角色<span class="gradient-text">顾问</span></h1>
+        <p class="welcome-sub">纯静态、可自托管的 AI 对话工作台。自己配知识库和角色提示词，密钥只存在你本地浏览器，不经过任何服务器。</p>
+
+        <div class="welcome-steps">
+            <div class="wstep" id="wstep-key">
+                <div class="wstep-h"><span class="wstep-no">1</span> 配置 API 密钥 <span class="wstep-tag" id="wstep-key-tag">必填</span></div>
+                <p class="wstep-desc">用你自己的密钥，浏览器直连大模型。支持 DeepSeek / OpenAI / Moonshot 等允许跨域的接口。密钥只存在本机，不会被上传。</p>
+                <div class="welcome-flds">
+                    <label>接口地址（Base URL）<input id="w-baseURL" type="text" placeholder="https://api.deepseek.com/v1"></label>
+                    <label>API 密钥<input id="w-apiKey" type="password" placeholder="sk-..." autocomplete="off"></label>
+                    <label>模型名称<input id="w-model" type="text" placeholder="deepseek-chat"></label>
+                </div>
+                <button class="primary sm" id="w-save">保存密钥</button>
+                <div class="welcome-msg" id="w-msg"></div>
+            </div>
+
+            <div class="wstep">
+                <div class="wstep-h"><span class="wstep-no">2</span> 添加知识库 <span class="wstep-tag opt">可选</span></div>
+                <p class="wstep-desc">已内置 3 份示例知识库（华为基本法 · 蓝军方法论 · 提示词指南）。你也可以添加自己的 .md 或网址资料，只存在本地。</p>
+                <button class="ghost sm" id="w-kb">去添加知识库</button>
+            </div>
+
+            <div class="wstep">
+                <div class="wstep-h"><span class="wstep-no">3</span> 选择起始角色</div>
+                <p class="wstep-desc">进入后随时可在下方切换，先挑一个开始：</p>
+                <div class="welcome-roles" id="welcome-roles"></div>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="primary lg" id="w-enter">进入工作台</button>
+            <div class="welcome-enter-note" id="w-enter-note">未配置密钥也能进入，首次提问会提示你配置。</div>
+        </div>
+    </div>
+</div>
+
 <!-- 设置抽屉 -->
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="drawer" aria-hidden="true">
@@ -90,7 +129,7 @@
             <button class="ghost" id="add-advisor">+ 新增角色</button>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-kb">
             <h3>③ 知识库管理</h3>
             <p class="panel-note">默认知识库是仓库里的 <code>.md</code> 文件（可 fork 后增改）；下方可添加你自己的资料（存本地，不上传）。</p>
             <div id="kb-list" class="list"></div>
