@@ -71,7 +71,7 @@ header {
 .kb-line b { color: var(--primary-700); font-weight: 600; }
 
 /* Tabs */
-.tabs { flex-shrink: 0; padding-bottom: 14px; }
+.tabs { flex-shrink: 0; padding: 10px 16px; border-top: 1px solid var(--gray-border); }
 .tabs-inner { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .tab {
     display: flex; align-items: flex-start; gap: 14px;
