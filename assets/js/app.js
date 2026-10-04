@@ -463,38 +463,96 @@
 
         // 引导页
         $('w-save').addEventListener('click', saveWelcomeKey);
-        $('w-enter').addEventListener('click', enterWorkbench);
+        $('w-create').addEventListener('click', wcCreate);
+        $('w-skip').addEventListener('click', function () {
+            hideWelcome();
+            if (state.advisors.length) { state.advisor = state.advisors[0].id; updateTabs(); render(); updateControls(); updateKbLine(); }
+        });
     }
 
     /* ===================== 引导页 ===================== */
     function setupWelcome() {
         // 已配置密钥的直接进工作台，不弹引导；否则默认先落引导页
         if (state.settings && state.settings.apiKey) { hideWelcome(); return; }
-        pendingAdvisor = state.advisor;
         // 预填已有设置
         $('w-baseURL').value = state.settings ? (state.settings.baseURL || '') : '';
         $('w-apiKey').value = state.settings ? (state.settings.apiKey || '') : '';
         $('w-model').value = state.settings ? (state.settings.model || '') : '';
         renderWelcomeRoles();
+        var first = state.defaultAdvisors[0];
+        if (first) selectWRole({ tpl: first });
         showWelcome();
     }
     function renderWelcomeRoles() {
         var box = $('welcome-roles'); box.innerHTML = '';
+        var chips = [{ custom: true, name: '自定义', desc: '从空白创建', color: '#64748b', avatar: '＋' }];
         state.defaultAdvisors.forEach(function (a) {
-            var card = document.createElement('div');
-            card.className = 'wrole-card';
-            card.innerHTML =
-                '<div class="wrole-top"><span class="dot" style="background:' + (a.color || '#8b5cf6') + '">' + esc(a.avatar || '问') + '</span>' +
-                '<div class="wrole-name">' + esc(a.name) + (a.role ? '<span class="wrole-role">' + esc(a.role) + '</span>' : '') + '</div></div>' +
-                '<div class="wrole-desc">' + esc(a.desc || '') + '</div>' +
-                '<div class="wrole-acts">' +
-                '<button class="primary sm" data-act="create">以此创建</button>' +
-                '<button class="ghost sm" data-act="use">直接用</button>' +
-                '</div>';
-            card.querySelector('[data-act="create"]').addEventListener('click', function () { createFromTemplate(a); });
-            card.querySelector('[data-act="use"]').addEventListener('click', function () { pendingAdvisor = a.id; enterWorkbench(); });
-            box.appendChild(card);
+            chips.push({ tpl: a, name: a.name, desc: a.role || '', color: a.color, avatar: a.avatar });
         });
+        chips.forEach(function (opt) {
+            var chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'welcome-role';
+            chip.dataset.id = opt.custom ? '__custom__' : opt.tpl.id;
+            chip.innerHTML = '<span class="dot" style="background:' + (opt.color || '#8b5cf6') + '">' + esc(opt.avatar || '问') + '</span>' + esc(opt.name) + (opt.desc ? '<span class="wrole-role">' + esc(opt.desc) + '</span>' : '');
+            chip.addEventListener('click', function () { selectWRole(opt); });
+            box.appendChild(chip);
+        });
+    }
+    function selectWRole(opt) {
+        Array.prototype.forEach.call($('welcome-roles').children, function (c) {
+            c.classList.toggle('active', c.dataset.id === (opt.custom ? '__custom__' : opt.tpl.id));
+        });
+        var f = $('wc-form'); f.classList.remove('hidden');
+        if (opt.custom) {
+            $('wc-name').value = '';
+            $('wc-avatar').value = '';
+            $('wc-color').value = '#7c3aed';
+            $('wc-role').value = '';
+            $('wc-system').value = '';
+            renderWcKbs([]);
+            $('wc-form-title').textContent = '创建角色（空白）';
+        } else {
+            var a = opt.tpl;
+            $('wc-name').value = a.name;
+            $('wc-avatar').value = a.avatar || '';
+            $('wc-color').value = a.color || '#7c3aed';
+            $('wc-role').value = a.role || '';
+            $('wc-system').value = a.system || '';
+            renderWcKbs(a.kbIds || []);
+            $('wc-form-title').textContent = '基于「' + a.name + '」创建（可改）';
+        }
+    }
+    function renderWcKbs(checkedIds) {
+        var grp = $('wc-kbs'); grp.innerHTML = '';
+        state.allKbs.forEach(function (k) {
+            var checked = checkedIds.indexOf(k.id) >= 0 ? 'checked' : '';
+            var label = document.createElement('label');
+            label.innerHTML = '<input type="checkbox" value="' + esc(k.id) + '" ' + checked + '>' + esc(k.title) + (k.source === 'custom' ? '（本地）' : '');
+            grp.appendChild(label);
+        });
+    }
+    function wcCreate() {
+        var name = $('wc-name').value.trim();
+        if (!name) { $('wc-name').focus(); return; }
+        var kbIds = Array.prototype.slice.call($('wc-kbs').querySelectorAll('input:checked')).map(function (i) { return i.value; });
+        var id = 'c_' + Date.now();
+        var rec = {
+            id: id, name: name,
+            avatar: ($('wc-avatar').value.trim() || name.charAt(0)),
+            color: $('wc-color').value,
+            role: $('wc-role').value.trim(),
+            system: $('wc-system').value,
+            kbIds: kbIds,
+            desc: '',
+            hint: '自定义角色 · 直接提问即可',
+            samples: [],
+            placeholder: '说说你的问题或方案…'
+        };
+        state.customAdvisors.push(rec);
+        RA.Config.saveCustomAdvisors(state.customAdvisors);
+        refreshAdvisors(); renderAdvisorList();
+        hideWelcome(); switchTo(id);
     }
     function showWelcome() { $('welcome').setAttribute('aria-hidden', 'false'); }
     function hideWelcome() { $('welcome').setAttribute('aria-hidden', 'true'); }
@@ -520,15 +578,6 @@
         hideWelcome();
         if (pendingAdvisor && getAdvisor(pendingAdvisor)) switchTo(pendingAdvisor);
         else if (state.advisors.length) { state.advisor = state.advisors[0].id; updateTabs(); render(); updateControls(); updateKbLine(); }
-    }
-
-    function createFromTemplate(a) {
-        var tpl = JSON.parse(JSON.stringify(a));
-        tpl.id = 'c_' + Date.now();
-        templateSrc = a;
-        welcomeCreatePending = true;
-        openAdvisorModal(tpl, true);
-        $('am-title').textContent = '从模板新建角色';
     }
 
     function updateKeyBadge() {

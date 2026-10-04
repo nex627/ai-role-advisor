@@ -75,14 +75,39 @@
             </div>
 
             <div class="wstep">
-                <div class="wstep-h"><span class="wstep-no">2</span> 选择起始角色 <span class="wstep-tag opt">内置模板</span></div>
-                <p class="wstep-desc">内置两个角色作为模板——知识库、提示词都已配好。点「以此创建」会打开已填好的配置（名称 / 提示词 / 知识库勾选都填好了），你可以直接保存，或改完再存。</p>
+                <div class="wstep-h"><span class="wstep-no">2</span> 创建你的角色 <span class="wstep-tag opt">自定义</span></div>
+                <p class="wstep-desc">先点「自定义」从空白建，或点下面两个示例——《华为基本法》《蓝军参谋部》，点一下下方表单就自动填好（名称 / 提示词 / 知识库勾选），改完再创建。示例已自带对应知识库与提示词。</p>
                 <div class="welcome-roles" id="welcome-roles"></div>
+
+                <div class="wc-form hidden" id="wc-form">
+                    <div class="wc-form-title" id="wc-form-title">创建角色</div>
+                    <label class="fld">角色名称
+                        <input id="wc-name" type="text" placeholder="如：宪章顾问">
+                    </label>
+                    <div class="am-row">
+                        <label class="fld">头像字
+                            <input id="wc-avatar" type="text" maxlength="1" placeholder="法">
+                        </label>
+                        <label class="fld">主题色
+                            <input id="wc-color" type="color" value="#7c3aed">
+                        </label>
+                    </div>
+                    <label class="fld">一句话定位（副标题）
+                        <input id="wc-role" type="text" placeholder="如：对抗顾问">
+                    </label>
+                    <label class="fld">系统提示词（决定它怎么想）
+                        <textarea id="wc-system" rows="6" placeholder="你是一位…"></textarea>
+                    </label>
+                    <label class="fld">挂接知识库（可多选）
+                        <div id="wc-kbs" class="chk-group"></div>
+                    </label>
+                </div>
             </div>
         </div>
 
         <div class="btn-row">
-            <button class="primary lg" id="w-enter">进入工作台</button>
+            <button class="primary lg" id="w-create">创建并进入工作台</button>
+            <button class="link-btn2" id="w-skip">稍后再说，直接进工作台</button>
             <div class="welcome-enter-note" id="w-enter-note">未配置密钥也能进入，首次提问会提示你配置。</div>
         </div>
     </div>
