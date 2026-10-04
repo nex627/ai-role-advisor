@@ -311,3 +311,13 @@ button.danger:hover { background: #fef2f2; }
 .primary.lg { width: 100%; padding: 13px; font-size: 15px; }
 .primary.sm { padding: 8px 14px; font-size: 13px; }
 .ghost.sm { padding: 8px 14px; font-size: 13px; }
+
+/* 引导页：选择起始角色（内置模板卡片） */
+.welcome-roles { display: flex; flex-direction: column; gap: 10px; }
+.wrole-card { border: 1.5px solid var(--gray-border); border-radius: 14px; padding: 13px 14px; background: #fff; }
+.wrole-top { display: flex; align-items: center; gap: 10px; }
+.wrole-top .dot { width: 30px; height: 30px; border-radius: 9px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; flex: 0 0 auto; font-weight: 600; }
+.wrole-name { font-weight: 600; font-size: 14.5px; display: flex; align-items: center; gap: 7px; }
+.wrole-role { font-size: 11px; font-weight: 500; color: var(--primary-600); background: #f5f3ff; padding: 1px 7px; border-radius: 8px; }
+.wrole-desc { font-size: 12.5px; color: var(--gray); margin: 8px 0 11px; line-height: 1.55; }
+.wrole-acts { display: flex; gap: 8px; }

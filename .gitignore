@@ -1,0 +1,4 @@
+_verify*.js
+_shot.js
+_prev_*.png
+node_modules/
