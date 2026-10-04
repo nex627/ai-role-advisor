@@ -87,8 +87,9 @@ header {
     font-family: "Songti SC", "SimSun", "Noto Serif CJK SC", serif;
 }
 .tab .meta { min-width: 0; }
-.tab .name { font-size: 15px; font-weight: 700; color: var(--dark); display: flex; align-items: center; }
+.tab .name { font-size: 15px; font-weight: 700; color: var(--dark); display: flex; align-items: center; flex-wrap: wrap; }
 .tab .name span.role { font-size: 12px; font-weight: 500; color: var(--gray); margin-left: 6px; }
+.tab .name span.builtin-tag { font-size: 10px; font-weight: 600; color: var(--gray); background: var(--gray-light); border: 1px solid var(--gray-border); padding: 1px 6px; border-radius: 8px; margin-left: 6px; }
 .tab .desc { font-size: 12.5px; color: var(--gray); margin-top: 3px; line-height: 1.45; }
 .tab .spin { display: none; width: 7px; height: 7px; border-radius: 50%; margin-left: 8px; background: var(--primary-500); }
 .tab[data-running="1"] .spin { display: inline-block; animation: pulse 1.1s ease-in-out infinite; }
@@ -131,7 +132,7 @@ header {
 }
 .turn.ai .avatar { background: linear-gradient(135deg, var(--primary-500), var(--pink-500)); }
 .turn.user .avatar { background: linear-gradient(135deg, #64748b, #475569); }
-.bubble { min-width: 0; max-width: calc(100% - 46px); }
+.bubble { min-width: 0; max-width: 100%; }
 .who { font-size: 11.5px; color: var(--gray); margin-bottom: 5px; }
 .turn.user .who { text-align: right; }
 .txt { padding: 13px 16px; border-radius: var(--radius-sm); font-size: 14.5px; line-height: 1.75; word-wrap: break-word; overflow-wrap: anywhere; }
@@ -246,6 +247,9 @@ button.danger:hover { background: #fef2f2; }
 .chk-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .chk-group label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dark); background: var(--gray-light); border: 1px solid var(--gray-border); border-radius: 9px; padding: 6px 10px; cursor: pointer; font-weight: 500; }
 .chk-group input { accent-color: var(--primary-600); }
+.kb-up-wrap { width: 100%; margin-top: 6px; }
+.kb-upload-btn { font-size: 12px; padding: 5px 10px; border: 1.5px dashed var(--primary-300); border-radius: 9px; background: #fff; color: var(--primary-700); cursor: pointer; font-family: inherit; font-weight: 600; }
+.kb-upload-btn:hover { border-color: var(--primary-500); background: #faf8ff; }
 .modal-foot { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
 .modal-foot .spacer { flex: 1; }
 

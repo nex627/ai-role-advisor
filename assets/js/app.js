@@ -69,10 +69,10 @@
 
     function turnHTML(m, tid) {
         var a = getAdvisor(tid);
-        var color = a && a.color ? a.color : '#8b5cf6';
-        var mark = a && a.avatar ? a.avatar : '问';
+        var who = a ? (a.name + (a.role ? ' · ' + a.role : '')) : '顾问';
         if (m.role === 'user') {
-            return '<div class="turn user"><div class="avatar">我</div><div class="bubble"><div class="txt">' + md(m.content) + '</div></div></div>';
+            return '<div class="turn user"><div class="bubble"><div class="who">我</div>' +
+                '<div class="txt">' + md(m.content) + '</div></div></div>';
         }
         var body;
         if (m.error) {
@@ -83,9 +83,8 @@
             body = '<div class="thinking">正在思考<span class="dots"><i></i><i></i><i></i></span></div>';
         }
         return '<div class="turn ai" data-advisor="' + tid + '">' +
-            '<div class="avatar" style="background:' + color + '">' + esc(mark) + '</div>' +
-            '<div class="bubble"><div class="who">' + esc(a ? (a.name + (a.role ? ' · ' + a.role : '')) : '顾问') + '</div>' +
-            '<div class="txt" style="border-left-color:' + color + '">' + body + '</div></div></div>';
+            '<div class="bubble"><div class="who">' + esc(who) + '</div>' +
+            '<div class="txt">' + body + '</div></div></div>';
     }
 
     function renderTurns(scrollToEnd) {
@@ -115,13 +114,13 @@
         s.addEventListener('click', openSettings);
         el.tabs.appendChild(s);
         state.advisors.forEach(function (a) {
+            var isCustom = state.customAdvisors.filter(function (x) { return x.id === a.id; })[0];
             var btn = document.createElement('button');
             btn.className = 'tab' + (a.id === state.advisor ? ' active' : '') + (state.running[a.id] ? '' : '');
             btn.setAttribute('data-advisor', a.id);
             if (state.running[a.id]) btn.setAttribute('data-running', '1');
             btn.innerHTML =
-                '<div class="mark" style="background:' + (a.color || '#8b5cf6') + '">' + esc(a.avatar || '问') + '</div>' +
-                '<div class="meta"><div class="name">' + esc(a.name) + (a.role ? '<span class="role">' + esc(a.role) + '</span>' : '') + '<span class="spin"></span></div>' +
+                '<div class="meta"><div class="name">' + esc(a.name) + (a.role ? '<span class="role">' + esc(a.role) + '</span>' : '') + (isCustom ? '' : '<span class="builtin-tag">内置</span>') + '<span class="spin"></span></div>' +
                 '<div class="desc">' + esc(a.desc || a.role || '') + '</div></div>';
             btn.addEventListener('click', function () { switchTo(a.id); });
             el.tabs.appendChild(btn);
@@ -250,11 +249,10 @@
             var isCustom = state.customAdvisors.filter(function (x) { return x.id === a.id; })[0];
             var item = document.createElement('div'); item.className = 'item';
             item.innerHTML =
-                '<div class="dot" style="background:' + (a.color || '#8b5cf6') + '">' + esc(a.avatar || '问') + '</div>' +
-                '<div class="info"><div class="t">' + esc(a.name) + '</div><div class="s">' + esc(a.role || '') + (isCustom ? ' · 本地' : ' · 默认') + '</div></div>' +
+                '<div class="info"><div class="t">' + esc(a.name) + '</div><div class="s">' + esc(a.role || '') + (isCustom ? ' · 本地' : ' · 内置') + '</div></div>' +
                 '<div class="acts">' +
                 '<button class="mini edt">编辑</button>' +
-                (isCustom ? '<button class="mini del">删除</button>' : '<button class="mini default" disabled>默认</button>') +
+                (isCustom ? '<button class="mini del">删除</button>' : '<button class="mini default" disabled>内置</button>') +
                 '</div>';
             item.querySelector('.edt').addEventListener('click', function () { openAdvisorModal(a, !!isCustom); });
             if (isCustom) item.querySelector('.del').addEventListener('click', function () { deleteAdvisor(a.id); });
@@ -276,18 +274,10 @@
         editing = a ? { id: a.id, isCustom: isCustom } : { id: 'c_' + Date.now(), isCustom: true };
         $('am-title').textContent = a ? '编辑角色' : '新增角色';
         $('am-name').value = a ? a.name : '';
-        $('am-avatar').value = a ? (a.avatar || '') : '';
-        $('am-color').value = a ? (a.color || '#7c3aed') : '#7c3aed';
         $('am-role').value = a ? (a.role || '') : '';
         $('am-system').value = a ? (a.system || '') : '';
-        // 知识库勾选
-        var grp = $('am-kbs'); grp.innerHTML = '';
-        state.allKbs.forEach(function (k) {
-            var checked = a && (a.kbIds || []).indexOf(k.id) >= 0 ? 'checked' : '';
-            var label = document.createElement('label');
-            label.innerHTML = '<input type="checkbox" value="' + esc(k.id) + '" ' + checked + '>' + esc(k.title) + (k.source === 'custom' ? '（本地）' : '');
-            grp.appendChild(label);
-        });
+        // 知识库勾选（内置库标「内置」，可在此直接上传本地资料）
+        renderKbGroup($('am-kbs'), a ? (a.kbIds || []) : []);
         $('am-delete').style.display = (a && isCustom) ? '' : 'none';
         $('advisorModal').classList.add('show'); $('advisorModal').setAttribute('aria-hidden', 'false');
     }
@@ -299,8 +289,6 @@
         var kbIds = Array.prototype.slice.call($('am-kbs').querySelectorAll('input:checked')).map(function (i) { return i.value; });
         var rec = {
             id: editing.id, name: name,
-            avatar: ($('am-avatar').value.trim() || name.charAt(0)),
-            color: $('am-color').value,
             role: $('am-role').value.trim(),
             system: $('am-system').value,
             kbIds: kbIds,
@@ -339,10 +327,9 @@
             var isCustom = k.source === 'custom';
             var item = document.createElement('div'); item.className = 'item';
             item.innerHTML =
-                '<div class="dot" style="background:#64748b">库</div>' +
-                '<div class="info"><div class="t">' + esc(k.title) + '</div><div class="s">' + (isCustom ? (k.url ? '本地 · 来自网址' : '本地 · 仅你可见') : '默认 · 来自仓库') + '</div></div>' +
+                '<div class="info"><div class="t">' + esc(k.title) + '</div><div class="s">' + (isCustom ? (k.url ? '本地 · 来自网址' : '本地 · 仅你可见') : '内置') + '</div></div>' +
                 '<div class="acts">' +
-                (isCustom ? '<button class="mini del">删除</button>' : '<button class="mini default" disabled>默认</button>') +
+                (isCustom ? '<button class="mini del">删除</button>' : '<button class="mini default" disabled>内置</button>') +
                 '</div>';
             if (isCustom) item.querySelector('.del').addEventListener('click', function () { deleteKB(k.id); });
             box.appendChild(item);
@@ -455,10 +442,22 @@
 
         $('kb-add').addEventListener('click', addKB);
         $('kb-file').addEventListener('change', function (e) {
-            var f = e.target.files && e.target.files[0]; if (!f) return;
-            var reader = new FileReader();
-            reader.onload = function () { $('kb-content').value = reader.result; if (!$('kb-title').value.trim()) $('kb-title').value = f.name.replace(/\.[^.]+$/, ''); };
-            reader.readAsText(f);
+            var files = Array.prototype.slice.call(e.target.files || []);
+            e.target.value = '';
+            if (!files.length) return;
+            var pending = files.length, n = $('kb-msg');
+            n.textContent = '正在读取 ' + files.length + ' 个文件…'; n.className = 'kb-msg';
+            files.forEach(function (f) {
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var rec = { id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), title: f.name.replace(/\.[^.]+$/, ''), content: String(reader.result), url: '', createdAt: Date.now() };
+                    RA.KB.putCustom(rec).then(function () { return RA.KB.listAll(); }).then(function (all) {
+                        state.allKbs = all; pending--;
+                        if (pending <= 0) { renderKBList(); updateKbLine(); renderAdvisorList(); n.textContent = '已上传 ' + files.length + ' 个资料到本机浏览器'; n.className = 'kb-msg ok'; }
+                    });
+                };
+                reader.readAsText(f);
+            });
         });
 
         // 引导页
@@ -485,16 +484,16 @@
     }
     function renderWelcomeRoles() {
         var box = $('welcome-roles'); box.innerHTML = '';
-        var chips = [{ custom: true, name: '自定义', desc: '从空白创建', color: '#64748b', avatar: '＋' }];
+        var chips = [{ custom: true, name: '自定义', desc: '从空白创建' }];
         state.defaultAdvisors.forEach(function (a) {
-            chips.push({ tpl: a, name: a.name, desc: a.role || '', color: a.color, avatar: a.avatar });
+            chips.push({ tpl: a, name: a.name, desc: a.role || '' });
         });
         chips.forEach(function (opt) {
             var chip = document.createElement('button');
             chip.type = 'button';
             chip.className = 'welcome-role';
             chip.dataset.id = opt.custom ? '__custom__' : opt.tpl.id;
-            chip.innerHTML = '<span class="dot" style="background:' + (opt.color || '#8b5cf6') + '">' + esc(opt.avatar || '问') + '</span>' + esc(opt.name) + (opt.desc ? '<span class="wrole-role">' + esc(opt.desc) + '</span>' : '');
+            chip.innerHTML = esc(opt.name) + (opt.desc ? '<span class="wrole-role">' + esc(opt.desc) + '</span>' : '');
             chip.addEventListener('click', function () { selectWRole(opt); });
             box.appendChild(chip);
         });
@@ -506,31 +505,57 @@
         var f = $('wc-form'); f.classList.remove('hidden');
         if (opt.custom) {
             $('wc-name').value = '';
-            $('wc-avatar').value = '';
-            $('wc-color').value = '#7c3aed';
             $('wc-role').value = '';
             $('wc-system').value = '';
-            renderWcKbs([]);
+            renderKbGroup($('wc-kbs'), []);
             $('wc-form-title').textContent = '创建角色（空白）';
         } else {
             var a = opt.tpl;
             $('wc-name').value = a.name;
-            $('wc-avatar').value = a.avatar || '';
-            $('wc-color').value = a.color || '#7c3aed';
             $('wc-role').value = a.role || '';
             $('wc-system').value = a.system || '';
-            renderWcKbs(a.kbIds || []);
+            renderKbGroup($('wc-kbs'), a.kbIds || []);
             $('wc-form-title').textContent = '基于「' + a.name + '」创建（可改）';
         }
     }
-    function renderWcKbs(checkedIds) {
-        var grp = $('wc-kbs'); grp.innerHTML = '';
+    function renderKbGroup(grp, checkedIds) {
+        grp.innerHTML = '';
         state.allKbs.forEach(function (k) {
             var checked = checkedIds.indexOf(k.id) >= 0 ? 'checked' : '';
+            var suffix = k.source === 'custom' ? '（本地）' : '（内置）';
             var label = document.createElement('label');
-            label.innerHTML = '<input type="checkbox" value="' + esc(k.id) + '" ' + checked + '>' + esc(k.title) + (k.source === 'custom' ? '（本地）' : '');
+            label.innerHTML = '<input type="checkbox" value="' + esc(k.id) + '" ' + checked + '>' + esc(k.title) + suffix;
             grp.appendChild(label);
         });
+        // 在此直接上传本地资料（.md/.txt），多个文件分别入库
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'mini kb-upload-btn'; btn.textContent = '＋ 上传本地资料';
+        var inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = '.md,.txt,.text'; inp.multiple = true; inp.hidden = true;
+        btn.addEventListener('click', function () { inp.click(); });
+        inp.addEventListener('change', function (e) {
+            var files = Array.prototype.slice.call(e.target.files || []);
+            inp.value = '';
+            if (!files.length) return;
+            var newIds = (checkedIds || []).slice();
+            var pending = files.length;
+            files.forEach(function (f) {
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var rid = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+                    var rec = { id: rid, title: f.name.replace(/\.[^.]+$/, ''), content: String(reader.result), url: '', createdAt: Date.now() };
+                    RA.KB.putCustom(rec).then(function () { return RA.KB.listAll(); }).then(function (all) {
+                        state.allKbs = all;
+                        newIds.push(rid); pending--;
+                        if (pending <= 0) { renderKbGroup(grp, newIds); renderKBList(); updateKbLine(); renderAdvisorList(); }
+                    });
+                };
+                reader.readAsText(f);
+            });
+        });
+        var wrap = document.createElement('div'); wrap.className = 'kb-up-wrap';
+        wrap.appendChild(btn); wrap.appendChild(inp);
+        grp.appendChild(wrap);
     }
     function wcCreate() {
         var name = $('wc-name').value.trim();
@@ -539,8 +564,6 @@
         var id = 'c_' + Date.now();
         var rec = {
             id: id, name: name,
-            avatar: ($('wc-avatar').value.trim() || name.charAt(0)),
-            color: $('wc-color').value,
             role: $('wc-role').value.trim(),
             system: $('wc-system').value,
             kbIds: kbIds,
