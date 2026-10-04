@@ -527,15 +527,18 @@
             label.innerHTML = '<input type="checkbox" value="' + esc(k.id) + '" ' + checked + '>' + esc(k.title) + suffix;
             grp.appendChild(label);
         });
-        // 在此直接上传本地资料（.md/.txt），多个文件分别入库
-        var btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'mini kb-upload-btn'; btn.textContent = '＋ 上传本地资料';
-        var inp = document.createElement('input');
-        inp.type = 'file'; inp.accept = '.md,.txt,.text'; inp.multiple = true; inp.hidden = true;
-        btn.addEventListener('click', function () { inp.click(); });
-        inp.addEventListener('change', function (e) {
+        // 操作区：上传本地资料 / 添加网址（GitHub 等可跨域链接）
+        var wrap = document.createElement('div'); wrap.className = 'kb-up-wrap';
+
+        // —— 上传本地资料（.md/.txt），多个文件分别入库 ——
+        var upBtn = document.createElement('button');
+        upBtn.type = 'button'; upBtn.className = 'mini kb-upload-btn'; upBtn.textContent = '＋ 上传本地资料';
+        var upInp = document.createElement('input');
+        upInp.type = 'file'; upInp.accept = '.md,.txt,.text'; upInp.multiple = true; upInp.hidden = true;
+        upBtn.addEventListener('click', function () { upInp.click(); });
+        upInp.addEventListener('change', function (e) {
             var files = Array.prototype.slice.call(e.target.files || []);
-            inp.value = '';
+            upInp.value = '';
             if (!files.length) return;
             var newIds = (checkedIds || []).slice();
             var pending = files.length;
@@ -553,8 +556,48 @@
                 reader.readAsText(f);
             });
         });
-        var wrap = document.createElement('div'); wrap.className = 'kb-up-wrap';
-        wrap.appendChild(btn); wrap.appendChild(inp);
+
+        // —— 添加网址（粘贴 GitHub / 可跨域 raw 链接，抓取后存入本地并勾上） ——
+        var urlBtn = document.createElement('button');
+        urlBtn.type = 'button'; urlBtn.className = 'mini kb-url-btn'; urlBtn.textContent = '＋ 添加网址';
+        var form = document.createElement('div'); form.className = 'kb-url-form hidden';
+        form.innerHTML =
+            '<input type="text" class="kb-url-name" placeholder="资料名称，如「我的产品手册」">' +
+            '<input type="url" class="kb-url-input" placeholder="GitHub / 可跨域网址（如 raw.githubusercontent.com/.../x.md）">' +
+            '<button type="button" class="mini kb-url-ok">获取</button>' +
+            '<button type="button" class="mini kb-url-cancel">取消</button>' +
+            '<div class="kb-url-msg"></div>';
+        urlBtn.addEventListener('click', function () { form.classList.toggle('hidden'); });
+        form.querySelector('.kb-url-cancel').addEventListener('click', function () { form.classList.add('hidden'); });
+        form.querySelector('.kb-url-ok').addEventListener('click', function () {
+            var t = form.querySelector('.kb-url-name').value.trim();
+            var u = form.querySelector('.kb-url-input').value.trim();
+            var msg = form.querySelector('.kb-url-msg');
+            if (!t) { msg.textContent = '请填写资料名称'; msg.className = 'kb-url-msg err'; return; }
+            if (!u) { msg.textContent = '请填写网址'; msg.className = 'kb-url-msg err'; return; }
+            msg.textContent = '正在抓取…'; msg.className = 'kb-url-msg';
+            fetch(u, { mode: 'cors' }).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            }).then(function (txt) {
+                txt = String(txt).trim();
+                if (!txt) throw new Error('抓取到的内容为空');
+                var rid = 'c_' + Date.now();
+                var rec = { id: rid, title: t, content: txt, url: u, createdAt: Date.now() };
+                return RA.KB.putCustom(rec).then(function () { return RA.KB.listAll(); }).then(function (all) {
+                    state.allKbs = all;
+                    var newIds = (checkedIds || []).slice(); newIds.push(rid);
+                    renderKbGroup(grp, newIds); renderKBList(); updateKbLine(); renderAdvisorList();
+                    form.classList.add('hidden');
+                });
+            }).catch(function (e) {
+                msg.textContent = '抓取失败：' + (e && e.message ? e.message : e) + '（多半是不允许跨域，改用粘贴/上传）';
+                msg.className = 'kb-url-msg err';
+            });
+        });
+
+        wrap.appendChild(upBtn); wrap.appendChild(upInp);
+        wrap.appendChild(urlBtn); wrap.appendChild(form);
         grp.appendChild(wrap);
     }
     function wcCreate() {

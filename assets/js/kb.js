@@ -90,8 +90,8 @@ RA.KB = (function () {
     function listAll() {
         return loadManifest().then(function (m) {
             return getCustomAll().then(function (custom) {
-                var defaults = (m.kbs || []).map(function (x) { return { id: x.id, title: x.title, source: 'default' }; });
-                var customs = custom.map(function (x) { return { id: x.id, title: x.title, source: 'custom' }; });
+                var defaults = (m.kbs || []).map(function (x) { return { id: x.id, title: x.title, source: 'default', url: x.url || '' }; });
+                var customs = custom.map(function (x) { return { id: x.id, title: x.title, source: 'custom', url: x.url || '' }; });
                 return defaults.concat(customs);
             });
         });

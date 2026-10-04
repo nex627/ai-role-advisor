@@ -247,9 +247,20 @@ button.danger:hover { background: #fef2f2; }
 .chk-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .chk-group label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dark); background: var(--gray-light); border: 1px solid var(--gray-border); border-radius: 9px; padding: 6px 10px; cursor: pointer; font-weight: 500; }
 .chk-group input { accent-color: var(--primary-600); }
-.kb-up-wrap { width: 100%; margin-top: 6px; }
+.kb-up-wrap { width: 100%; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .kb-upload-btn { font-size: 12px; padding: 5px 10px; border: 1.5px dashed var(--primary-300); border-radius: 9px; background: #fff; color: var(--primary-700); cursor: pointer; font-family: inherit; font-weight: 600; }
 .kb-upload-btn:hover { border-color: var(--primary-500); background: #faf8ff; }
+.kb-url-btn { font-size: 12px; padding: 5px 10px; border: 1.5px dashed var(--primary-300); border-radius: 9px; background: #fff; color: var(--primary-700); cursor: pointer; font-family: inherit; font-weight: 600; }
+.kb-url-btn:hover { border-color: var(--primary-500); background: #faf8ff; }
+.kb-url-form { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; padding: 10px; background: var(--gray-light); border: 1px solid var(--gray-border); border-radius: 10px; }
+.kb-url-form.hidden { display: none; }
+.kb-url-form input[type=text], .kb-url-form input[type=url] { flex: 1 1 220px; min-width: 180px; padding: 7px 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
+.kb-url-form input:focus { border-color: var(--primary-400); }
+.kb-url-form .kb-url-ok { border: 1.5px solid var(--primary-500); background: var(--primary-600); color: #fff; }
+.kb-url-form .kb-url-cancel { border: 1.5px solid var(--gray-border); background: #fff; color: var(--gray); }
+.kb-url-msg { flex-basis: 100%; font-size: 12px; min-height: 14px; }
+.kb-url-msg.err { color: #b91c1c; }
+.kb-url-msg.ok { color: #047857; }
 .modal-foot { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
 .modal-foot .spacer { flex: 1; }
 
